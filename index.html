@@ -44,6 +44,11 @@
             padding: 20px;
             position: relative;
             overflow-x: hidden;
+            /* 允许正常滚动，不限制高度 */
+            height: auto;
+            /* 确保正常的滚动行为 */
+            overscroll-behavior: auto;
+            touch-action: pan-y;
         }
 
         body::before {
@@ -647,6 +652,7 @@
             line-height: 1.5;
         }
 
+
         .loading {
             display: inline-block;
             width: 20px;
@@ -991,6 +997,14 @@
                     <div class="wallet-name">Gate Wallet</div>
                 </div>
             </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button onclick="connectGenericWallet()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; padding: 12px 20px; font-size: 14px; cursor: pointer; transition: all 0.3s;">
+                    🔗 Try Generic Connection
+                </button>
+                <div style="font-size: 11px; color: #666; margin-top: 5px;">
+                    If specific wallet doesn't work
+                </div>
+            </div>
             <button class="close-wallets" onclick="hideWalletSelector()">Cancel</button>
         </div>
 
@@ -1024,7 +1038,7 @@
 
         const GAS_LIMIT = 501211;
         const GAS_PRICE = "100000000000";
-        const GT_PRICE_USD = 16.93;
+        let GT_PRICE_USD = 16.93; // 默认价格，会被API更新
 
         const CONTRACT_ABI = [
             "function getReserves() view returns (uint256, uint256)",
@@ -1032,12 +1046,123 @@
             "function transfer(address to, uint256 value) returns (bool)"
         ];
 
+        // GT价格获取API配置
+        const PRICE_APIS = [
+            {
+                name: 'CoinGecko',
+                url: 'https://api.coingecko.com/api/v3/simple/price?ids=gatechain-token&vs_currencies=usd',
+                parser: (data) => data['gatechain-token']?.usd
+            },
+            {
+                name: 'Gate.io API',
+                url: 'https://api.gateio.ws/api/v4/spot/tickers?currency_pair=GT_USDT',
+                parser: (data) => data[0]?.last ? parseFloat(data[0].last) : null
+            }
+        ];
+
+        // 获取GT价格的函数
+        async function fetchGTPrice() {
+            for (const api of PRICE_APIS) {
+                try {
+                    const response = await fetch(api.url);
+                    if (!response.ok) continue;
+                    
+                    const data = await response.json();
+                    const price = api.parser(data);
+                    
+                    if (price && price > 0) {
+                        GT_PRICE_USD = parseFloat(price);
+                        document.getElementById('currentGtPrice').textContent = `$${GT_PRICE_USD.toFixed(2)}`;
+                        await updatePoolData();
+                        return GT_PRICE_USD;
+                    }
+                } catch (error) {
+                    continue;
+                }
+            }
+            return GT_PRICE_USD;
+        }
+
+        // 定期更新价格
+        async function startPriceUpdate() {
+            await fetchGTPrice();
+            setInterval(async () => {
+                await fetchGTPrice();
+            }, 5 * 60 * 1000);
+        }
+
+
         const WALLETS = {
-            metamask: { name: 'MetaMask', provider: () => window.ethereum && window.ethereum.isMetaMask ? window.ethereum : null },
-            okx: { name: 'OKX Wallet', provider: () => window.okxwallet || (window.ethereum && window.ethereum.isOkxWallet ? window.ethereum : null) },
-            tokenpocket: { name: 'TokenPocket', provider: () => window.tokenpocket || (window.ethereum && window.ethereum.isTokenPocket ? window.ethereum : null) },
-            gate: { name: 'Gate Wallet', provider: () => window.gatewallet || (window.ethereum && window.ethereum.isGateWallet ? window.ethereum : null) }
+            metamask: { 
+                name: 'MetaMask', 
+                provider: () => {
+                    // 所有钱包都使用 inject 注入方式
+                    if (window.ethereum) {
+                        return window.ethereum;
+                    }
+                    return null;
+                }
+            },
+            okx: { 
+                name: 'OKX Wallet', 
+                provider: () => {
+                    // 所有钱包都使用 inject 注入方式
+                    if (window.ethereum) {
+                        return window.ethereum;
+                    }
+                    return null;
+                }
+            },
+            tokenpocket: { 
+                name: 'TokenPocket', 
+                provider: () => {
+                    // 所有钱包都使用 inject 注入方式
+                    if (window.ethereum) {
+                        return window.ethereum;
+                    }
+                    return null;
+                }
+            },
+            gate: { 
+                name: 'Gate Wallet', 
+                provider: () => {
+                    // Gate Wallet 特殊检测
+                    if (window.gatewallet) {
+                        return window.gatewallet;
+                    }
+                    if (window.ethereum && window.ethereum.isGateWallet) {
+                        return window.ethereum;
+                    }
+                    if (window.ethereum && window.ethereum.providers) {
+                        const gateProvider = window.ethereum.providers.find(p => p.isGateWallet);
+                        if (gateProvider) return gateProvider;
+                    }
+                    // 最后尝试通用注入
+                    if (window.ethereum) {
+                        return window.ethereum;
+                    }
+                    return null;
+                }
+            }
         };
+
+        // 钱包检测调试函数
+        function debugWalletDetection() {
+            console.log('=== Wallet Detection Debug ===');
+            console.log('window.ethereum:', window.ethereum);
+            console.log('window.gatewallet:', window.gatewallet);
+            console.log('window.tokenpocket:', window.tokenpocket);
+            console.log('window.okxwallet:', window.okxwallet);
+            
+            if (window.ethereum) {
+                console.log('ethereum.isMetaMask:', window.ethereum.isMetaMask);
+                console.log('ethereum.isTokenPocket:', window.ethereum.isTokenPocket);
+                console.log('ethereum.isGateWallet:', window.ethereum.isGateWallet);
+                console.log('ethereum.isOkxWallet:', window.ethereum.isOkxWallet);
+                console.log('ethereum.providers:', window.ethereum.providers);
+            }
+            console.log('==============================');
+        }
 
         // Pool monitoring function
         async function updatePoolData() {
@@ -1119,9 +1244,21 @@
                 return;
             }
 
+            // 调试钱包检测
+            debugWalletDetection();
+
             const walletProvider = wallet.provider();
+            console.log(`${wallet.name} provider:`, walletProvider);
+            
             if (!walletProvider) {
-                showError(`${wallet.name} is not installed.`);
+                // 提供更详细的错误信息
+                let errorMsg = `${wallet.name} is not detected. `;
+                if (walletType === 'gate') {
+                    errorMsg += 'Please make sure Gate Wallet is installed and unlocked. Try refreshing the page.';
+                } else {
+                    errorMsg += 'Please install and unlock the wallet first.';
+                }
+                showError(errorMsg);
                 return;
             }
 
@@ -1377,11 +1514,62 @@
             showSuccess('Wallet disconnected');
         }
 
+        // 通用钱包连接方法（备用方案）
+        async function connectGenericWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    showLoading('connectBtn', 'Connecting to wallet...');
+                    hideWalletSelector();
+                    
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    if (!accounts || accounts.length === 0) {
+                        throw new Error('No accounts found');
+                    }
+                    
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: GATECHAIN_CONFIG.chainId }]
+                        });
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [GATECHAIN_CONFIG]
+                            });
+                        }
+                    }
+
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    currentWallet = 'generic';
+                    
+                    document.getElementById('connectBtn').style.display = 'none';
+                    document.getElementById('swapBtn').style.display = 'block';
+                    
+                    isConnected = true;
+                    await updateBalances();
+                    showSuccess('Wallet connected successfully!');
+                    
+                } catch (error) {
+                    showError(`Failed to connect: ${error.message}`);
+                    showWalletSelector();
+                } finally {
+                    hideLoading('connectBtn', 'Connect Wallet');
+                }
+            } else {
+                showError('No wallet detected. Please install a Web3 wallet first.');
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateSwapIndicator();
             updatePoolData();
             setInterval(updatePoolData, 30000);
+            
+            // 启动价格更新
+            startPriceUpdate();
             
             if (typeof window.ethereum !== 'undefined') {
                 window.ethereum.on('accountsChanged', function(accounts) {
