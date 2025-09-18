@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateDog314 Swap</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2563eb;
+            --light-blue: #3b82f6;
+            --deep-blue: #1e40af;
+            --sky-blue: #0ea5e9;
+            --ice-blue: #e0f2fe;
+            --pure-white: #ffffff;
+            --soft-white: #f8fafc;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(-45deg, #2563eb, #3b82f6, #0ea5e9, #1e40af);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+            color: white;
+            z-index: 10;
+            position: relative;
+        }
+
+        .title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 
+                3px 3px 0px #1e40af,
+                6px 6px 0px #3b82f6,
+                9px 9px 10px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(255, 255, 255, 0.8);
+            animation: graffitiBounce 3s ease-in-out infinite;
+            letter-spacing: 4px;
+            transform: rotate(-2deg);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .dog-icon {
+            width: 60px;
+            height: 60px;
+            animation: dogSpin 4s linear infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .dog-icon-fallback {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            animation: dogSpin 4s linear infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+        }
+
+        @keyframes graffitiBounce {
+            0%, 100% { 
+                transform: rotate(-2deg) translateY(0); 
+            }
+            25% { 
+                transform: rotate(1deg) translateY(-5px); 
+            }
+            50% { 
+                transform: rotate(-1deg) translateY(-10px); 
+            }
+            75% { 
+                transform: rotate(2deg) translateY(-5px); 
+            }
+        }
+
+        @keyframes dogSpin {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(0.9); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 
+                0 25px 80px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            z-index: 10;
+            animation: containerFloat 6s ease-in-out infinite;
+        }
+
+        @keyframes containerFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .token-input {
+            background: linear-gradient(145deg, #f8fafc, #ffffff);
+            border: 2px solid rgba(37, 99, 235, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .token-input:focus-within {
+            border-color: var(--primary-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.2);
+        }
+
+        .token-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .token-select {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(145deg, #ffffff, #f1f5f9);
+            border: 2px solid rgba(37, 99, 235, 0.1);
+            border-radius: 15px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .token-select:hover {
+            border-color: var(--primary-blue);
+            transform: scale(1.02);
+        }
+
+        .token-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+        }
+
+        .gt-icon {
+            background: linear-gradient(45deg, var(--primary-blue), var(--sky-blue));
+        }
+
+        .gdog-icon {
+            background: linear-gradient(45deg, #3b82f6, #1e40af);
+        }
+
+        .token-icon img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .amount-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-dark);
+            outline: none;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .amount-input::placeholder {
+            color: var(--text-light);
+            font-weight: 300;
+        }
+
+        .balance {
+            color: var(--text-light);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .swap-button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 25px 0;
+            gap: 10px;
+        }
+
+        .swap-direction-indicator {
+            text-align: center;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .buy-indicator {
+            background: linear-gradient(45deg, #10b981, #34d399);
+            color: white;
+            animation: buyPulse 2s ease-in-out infinite;
+        }
+
+        .sell-indicator {
+            background: linear-gradient(45deg, #f59e0b, #fbbf24);
+            color: white;
+            animation: sellPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes buyPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes sellPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+        }
+
+        .swap-icon {
+            background: linear-gradient(45deg, var(--primary-blue), var(--sky-blue));
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+            font-size: 24px;
+        }
+
+        .swap-icon:hover {
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 15px 40px rgba(37, 99, 235, 0.4);
+        }
+
+        .pool-info {
+            background: linear-gradient(145deg, rgba(37, 99, 235, 0.1), rgba(255, 255, 255, 0.8));
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+
+        .pool-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-dark);
+        }
+
+        .pool-row:last-child {
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+
+        .price-info {
+            background: linear-gradient(145deg, var(--ice-blue), #ffffff);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .price-row:last-child {
+            margin-bottom: 0;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .wallet-selector {
+            display: none;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wallet-selector.show {
+            display: block;
+        }
+
+        .wallet-title {
+            text-align: center;
+            color: var(--text-dark);
+            font-weight: 700;
+            margin-bottom: 25px;
+            font-size: 20px;
+        }
+
+        .wallet-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .wallet-option {
+            display: flex;
+            align-items: center;
+            padding: 18px;
+            border: 2px solid rgba(37, 99, 235, 0.1);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+        }
+
+        .wallet-option:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.2);
+        }
+
+        .wallet-icon {
+            width: 36px;
+            height: 36px;
+            margin-right: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+        }
+
+        .wallet-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .connect-wallet, .swap-btn {
+            width: 100%;
+            background: linear-gradient(45deg, var(--primary-blue), var(--sky-blue));
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.3);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .connect-wallet:hover, .swap-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 45px rgba(37, 99, 235, 0.4);
+        }
+
+        .swap-btn:disabled {
+            background: linear-gradient(45deg, #94a3b8, #cbd5e1);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .close-wallets {
+            background: linear-gradient(45deg, #64748b, #475569);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .network-info {
+            background: rgba(37, 99, 235, 0.1);
+            border: 2px solid rgba(37, 99, 235, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 25px;
+            text-align: center;
+            color: var(--deep-blue);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error, .success {
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: messageSlide 0.5s ease;
+        }
+
+        .error {
+            background: linear-gradient(145deg, #fee2e2, #fecaca);
+            border: 1px solid #f87171;
+            color: #dc2626;
+        }
+
+        .success {
+            background: linear-gradient(145deg, #d1fae5, #a7f3d0);
+            border: 1px solid #34d399;
+            color: #065f46;
+        }
+
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @media (max-width: 768px) {
+            .title { font-size: 2rem; }
+            .container { padding: 25px; }
+            .wallet-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">
+            <img src="./dog.png" class="dog-icon" alt="Dog" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div class="dog-icon-fallback" style="display:none;">,<img src="./dog.png" class="dog-icon" alt="Dog" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /></div>
+            GateDog314 Swap
+        </h1>
+    </div>
+
+    <div class="container">
+        <div class="swap-container">
+            <div class="token-input">
+                <div class="token-header">
+                    <div class="token-select">
+                        <div class="token-icon gt-icon">
+                            <img src="./gt-logo.png" alt="GT" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                            <span style="display:none;">GT</span>
+                        </div>
+                        <span>GT</span>
+                    </div>
+                    <div class="balance">Balance: <span id="gtBalance">0.00</span></div>
+                </div>
+                <input type="number" class="amount-input" id="fromAmount" placeholder="0.0" oninput="calculateOutput()" />
+            </div>
+
+            <div class="swap-button-container">
+                <div class="swap-direction-indicator buy-indicator" id="swapIndicator">
+                    <span id="swapDirectionText">🟢 Buy GDOG314 with GT</span>
+                </div>
+                <button class="swap-icon" onclick="swapTokens()">⇅</button>
+            </div>
+
+            <div class="token-input">
+                <div class="token-header">
+                    <div class="token-select">
+                        <div class="token-icon gdog-icon">
+                            <img src="./dog.png" alt="GDOG314" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                            <span style="display:none;">GDOG</span>
+                        </div>
+                        <span>GDOG314</span>
+                    </div>
+                    <div class="balance">Balance: <span id="gdogBalance">0.00</span></div>
+                </div>
+                <input type="number" class="amount-input" id="toAmount" placeholder="0.0" readonly />
+            </div>
+        </div>
+
+        <div class="pool-info" id="poolInfo">
+            <div class="pool-row">
+                <span>Pool GT Balance:</span>
+                <span id="poolGtBalance">Loading...</span>
+            </div>
+            <div class="pool-row">
+                <span>Pool GDOG314 Balance:</span>
+                <span id="poolGdogBalance">Loading...</span>
+            </div>
+            <div class="pool-row">
+                <span>Current GT Price:</span>
+                <span id="currentGtPrice">$16.93</span>
+            </div>
+            <div class="pool-row">
+                <span>GDOG314 Price:</span>
+                <span id="currentGdogPrice">$0.000</span>
+            </div>
+        </div>
+
+        <div class="price-info" id="priceInfo" style="display: none;">
+            <div class="price-row">
+                <span>Expected Price:</span>
+                <span id="tokenPrice">$0.000</span>
+            </div>
+            <div class="price-row">
+                <span>Slippage:</span>
+                <span>0.5%</span>
+            </div>
+            <div class="price-row">
+                <span>You will receive:</span>
+                <span id="receiveAmount">0 GDOG314</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="connect-wallet" id="connectBtn" onclick="showWalletSelector()">Connect Wallet</button>
+            <button class="swap-btn" id="swapBtn" onclick="executeSwap()" style="display: none;" disabled>Enter Amount</button>
+        </div>
+
+        <div class="wallet-selector" id="walletSelector">
+            <div class="wallet-title">Choose Your Wallet</div>
+            <div class="wallet-grid">
+                <div class="wallet-option" onclick="connectSpecificWallet('metamask')">
+                    <div class="wallet-icon" style="background: linear-gradient(45deg, #f6851b, #e2761b);">🦊</div>
+                    <div class="wallet-name">MetaMask</div>
+                </div>
+                <div class="wallet-option" onclick="connectSpecificWallet('okx')">
+                    <div class="wallet-icon" style="background: linear-gradient(45deg, #000, #333);">OKX</div>
+                    <div class="wallet-name">OKX Wallet</div>
+                </div>
+                <div class="wallet-option" onclick="connectSpecificWallet('tokenpocket')">
+                    <div class="wallet-icon" style="background: linear-gradient(45deg, #2980b9, #3498db);">TP</div>
+                    <div class="wallet-name">TokenPocket</div>
+                </div>
+                <div class="wallet-option" onclick="connectSpecificWallet('gate')">
+                    <div class="wallet-icon" style="background: linear-gradient(45deg, #1e3c72, #2a5298);">G</div>
+                    <div class="wallet-name">Gate Wallet</div>
+                </div>
+            </div>
+            <button class="close-wallets" onclick="hideWalletSelector()">Cancel</button>
+        </div>
+
+        <div class="network-info">
+            Connected to GateChain EVM (Chain ID: 86)<br />
+            Contract: <span id="contractAddress">0xc53159571f3ec44029537ebd7d1afad29dba7b67</span>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="successMessage" class="success" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Contract configuration
+        const CONTRACT_ADDRESS = "0xc53159571f3ec44029537ebd7d1afad29dba7b67";
+        const GATECHAIN_CONFIG = {
+            chainId: '0x56',
+            chainName: 'GateChain EVM',
+            nativeCurrency: { name: 'GT', symbol: 'GT', decimals: 18 },
+            rpcUrls: ['https://evm.gatenode.cc'],
+            blockExplorerUrls: ['https://www.gatescan.org']
+        };
+
+        // Global variables
+        let provider, signer, contract;
+        let isConnected = false;
+        let swapDirection = 'buy';
+        let currentWallet = null;
+        let poolData = { gtBalance: 0, gdogBalance: 0, gdogPrice: 0 };
+
+        const GAS_LIMIT = 501211;
+        const GAS_PRICE = "100000000000";
+        const GT_PRICE_USD = 16.93;
+
+        const CONTRACT_ABI = [
+            "function getReserves() view returns (uint256, uint256)",
+            "function balanceOf(address account) view returns (uint256)",
+            "function transfer(address to, uint256 value) returns (bool)"
+        ];
+
+        const WALLETS = {
+            metamask: { name: 'MetaMask', provider: () => window.ethereum && window.ethereum.isMetaMask ? window.ethereum : null },
+            okx: { name: 'OKX Wallet', provider: () => window.okxwallet || (window.ethereum && window.ethereum.isOkxWallet ? window.ethereum : null) },
+            tokenpocket: { name: 'TokenPocket', provider: () => window.tokenpocket || (window.ethereum && window.ethereum.isTokenPocket ? window.ethereum : null) },
+            gate: { name: 'Gate Wallet', provider: () => window.gatewallet || (window.ethereum && window.ethereum.isGateWallet ? window.ethereum : null) }
+        };
+
+        // Pool monitoring function
+        async function updatePoolData() {
+            try {
+                if (!provider) {
+                    provider = new ethers.JsonRpcProvider('https://evm.gatenode.cc');
+                }
+                
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+                const reserves = await contract.getReserves();
+                const gtBalance = parseFloat(ethers.formatEther(reserves[0]));
+                const gdogBalance = parseFloat(ethers.formatEther(reserves[1]));
+                
+                poolData.gtBalance = gtBalance;
+                poolData.gdogBalance = gdogBalance;
+                
+                if (gtBalance > 0 && gdogBalance > 0) {
+                    poolData.gdogPrice = (gtBalance / gdogBalance) * GT_PRICE_USD;
+                }
+                
+                document.getElementById('poolGtBalance').textContent = gtBalance.toFixed(4) + ' GT';
+                document.getElementById('poolGdogBalance').textContent = gdogBalance.toFixed(2) + ' GDOG314';
+                document.getElementById('currentGdogPrice').textContent = '$' + poolData.gdogPrice.toFixed(6);
+            } catch (error) {
+                console.error('Error updating pool data:', error);
+                document.getElementById('poolGtBalance').textContent = 'Error';
+                document.getElementById('poolGdogBalance').textContent = 'Error';
+            }
+        }
+
+        // Update swap direction indicator
+        function updateSwapIndicator() {
+            const indicator = document.getElementById('swapIndicator');
+            const text = document.getElementById('swapDirectionText');
+            
+            if (swapDirection === 'buy') {
+                indicator.className = 'swap-direction-indicator buy-indicator';
+                text.textContent = '🟢 Buy GDOG314 with GT';
+            } else {
+                indicator.className = 'swap-direction-indicator sell-indicator';
+                text.textContent = '🟡 Sell GDOG314 for GT';
+            }
+        }
+
+        // Wallet functions
+        function showWalletSelector() {
+            document.getElementById('walletSelector').classList.add('show');
+            document.getElementById('connectBtn').style.display = 'none';
+        }
+
+        function hideWalletSelector() {
+            document.getElementById('walletSelector').classList.remove('show');
+            document.getElementById('connectBtn').style.display = 'block';
+        }
+
+        async function connectSpecificWallet(walletType) {
+            const wallet = WALLETS[walletType];
+            if (!wallet) {
+                showError('Unsupported wallet type');
+                return;
+            }
+
+            const walletProvider = wallet.provider();
+            if (!walletProvider) {
+                showError(`${wallet.name} is not installed.`);
+                return;
+            }
+
+            try {
+                showLoading('connectBtn', `Connecting to ${wallet.name}...`);
+                hideWalletSelector();
+                
+                await walletProvider.request({ method: 'eth_requestAccounts' });
+                
+                try {
+                    await walletProvider.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: GATECHAIN_CONFIG.chainId }]
+                    });
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        await walletProvider.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [GATECHAIN_CONFIG]
+                        });
+                    }
+                }
+
+                provider = new ethers.BrowserProvider(walletProvider);
+                signer = await provider.getSigner();
+                currentWallet = walletType;
+                
+                document.getElementById('connectBtn').style.display = 'none';
+                document.getElementById('swapBtn').style.display = 'block';
+                
+                isConnected = true;
+                await updateBalances();
+                showSuccess(`${wallet.name} connected successfully!`);
+                
+            } catch (error) {
+                showError(`Failed to connect: ${error.message}`);
+                showWalletSelector();
+            } finally {
+                hideLoading('connectBtn', 'Connect Wallet');
+            }
+        }
+
+        async function updateBalances() {
+            if (!isConnected) return;
+            
+            try {
+                const address = await signer.getAddress();
+                const gtBalance = await provider.getBalance(address);
+                document.getElementById('gtBalance').textContent = parseFloat(ethers.formatEther(gtBalance)).toFixed(4);
+                
+                try {
+                    const gdogBalance = await contract.balanceOf(address);
+                    document.getElementById('gdogBalance').textContent = parseFloat(ethers.formatEther(gdogBalance)).toFixed(2);
+                } catch (e) {
+                    document.getElementById('gdogBalance').textContent = '0.00';
+                }
+            } catch (error) {
+                console.error('Error updating balances:', error);
+            }
+        }
+
+        async function calculateOutput() {
+            const fromAmount = document.getElementById('fromAmount').value;
+            
+            if (!fromAmount || fromAmount <= 0) {
+                document.getElementById('toAmount').value = '';
+                document.getElementById('priceInfo').style.display = 'none';
+                document.getElementById('swapBtn').disabled = true;
+                document.getElementById('swapBtn').textContent = 'Enter Amount';
+                return;
+            }
+
+            try {
+                let outputAmount;
+                
+                if (swapDirection === 'buy') {
+                    const gtAmount = parseFloat(fromAmount);
+                    const ethReserve = poolData.gtBalance || 100;
+                    const tokenReserve = poolData.gdogBalance || 20000000;
+                    
+                    outputAmount = (gtAmount * tokenReserve) / (ethReserve + gtAmount);
+                } else {
+                    const gdogAmount = parseFloat(fromAmount);
+                    const tokenReserve = poolData.gdogBalance || 20000000;
+                    const ethReserve = poolData.gtBalance || 100;
+                    
+                    outputAmount = (gdogAmount * ethReserve) / (tokenReserve + gdogAmount);
+                }
+
+                outputAmount = outputAmount * 0.995; // 0.5% slippage
+                
+                document.getElementById('toAmount').value = outputAmount.toFixed(6);
+                
+                let expectedPrice;
+                if (swapDirection === 'buy') {
+                    expectedPrice = (parseFloat(fromAmount) * GT_PRICE_USD) / outputAmount;
+                } else {
+                    expectedPrice = (outputAmount * GT_PRICE_USD) / parseFloat(fromAmount);
+                }
+                
+                document.getElementById('tokenPrice').textContent = `${expectedPrice.toFixed(6)}`;
+                document.getElementById('receiveAmount').textContent = `${outputAmount.toFixed(6)} ${swapDirection === 'buy' ? 'GDOG314' : 'GT'}`;
+                document.getElementById('priceInfo').style.display = 'block';
+                
+                document.getElementById('swapBtn').disabled = false;
+                document.getElementById('swapBtn').textContent = swapDirection === 'buy' ? 'Buy GDOG314' : 'Sell GDOG314';
+                
+            } catch (error) {
+                console.error('Error calculating output:', error);
+                showError('Error calculating swap amount');
+            }
+        }
+
+        function swapTokens() {
+            swapDirection = swapDirection === 'buy' ? 'sell' : 'buy';
+            
+            document.getElementById('fromAmount').value = '';
+            document.getElementById('toAmount').value = '';
+            document.getElementById('priceInfo').style.display = 'none';
+            
+            updateSwapIndicator();
+            
+            if (swapDirection === 'buy') {
+                document.querySelector('.token-input:first-child .token-select').innerHTML = '<div class="token-icon gt-icon"><img src="./gt-logo.png" alt="GT" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" /><span style="display:none;">GT</span></div><span>GT</span>';
+                document.querySelector('.token-input:last-child .token-select').innerHTML = '<div class="token-icon gdog-icon"><img src="./dog.png" alt="GDOG314" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" /><span style="display:none;">GDOG</span></div><span>GDOG314</span>';
+            } else {
+                document.querySelector('.token-input:first-child .token-select').innerHTML = '<div class="token-icon gdog-icon"><img src="./dog.png" alt="GDOG314" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" /><span style="display:none;">GDOG</span></div><span>GDOG314</span>';
+                document.querySelector('.token-input:last-child .token-select').innerHTML = '<div class="token-icon gt-icon"><img src="./gt-logo.png" alt="GT" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" /><span style="display:none;">GT</span></div><span>GT</span>';
+            }
+            
+            document.getElementById('swapBtn').disabled = true;
+            document.getElementById('swapBtn').textContent = 'Enter Amount';
+        }
+
+        async function executeSwap() {
+            if (!isConnected) {
+                showError('Please connect your wallet first');
+                return;
+            }
+
+            const fromAmount = document.getElementById('fromAmount').value;
+            if (!fromAmount || fromAmount <= 0) {
+                showError('Please enter a valid amount');
+                return;
+            }
+
+            try {
+                showLoading('swapBtn', 'Swapping...');
+                
+                if (swapDirection === 'buy') {
+                    const tx = await signer.sendTransaction({
+                        to: CONTRACT_ADDRESS,
+                        value: ethers.parseEther(fromAmount),
+                        gasLimit: GAS_LIMIT,
+                        gasPrice: GAS_PRICE
+                    });
+                    
+                    await tx.wait();
+                    showSuccess(`Successfully bought GDOG314! TX: ${tx.hash.substring(0,10)}...`);
+                } else {
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                    const tx = await contract.transfer(CONTRACT_ADDRESS, ethers.parseEther(fromAmount), {
+                        gasLimit: GAS_LIMIT,
+                        gasPrice: GAS_PRICE
+                    });
+                    
+                    await tx.wait();
+                    showSuccess(`Successfully sold GDOG314! TX: ${tx.hash.substring(0,10)}...`);
+                }
+                
+                document.getElementById('fromAmount').value = '';
+                document.getElementById('toAmount').value = '';
+                document.getElementById('priceInfo').style.display = 'none';
+                await updateBalances();
+                await updatePoolData();
+                
+            } catch (error) {
+                showError('Swap failed: ' + error.message);
+            } finally {
+                hideLoading('swapBtn', swapDirection === 'buy' ? 'Buy GDOG314' : 'Sell GDOG314');
+            }
+        }
+
+        function showLoading(elementId, text) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<span class="loading"></span>${text}`;
+            element.disabled = true;
+        }
+
+        function hideLoading(elementId, originalText) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = originalText;
+            element.disabled = false;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            setTimeout(() => successDiv.style.display = 'none', 5000);
+        }
+
+        function disconnectWallet() {
+            isConnected = false;
+            currentWallet = null;
+            provider = null;
+            signer = null;
+            
+            document.getElementById('connectBtn').style.display = 'block';
+            document.getElementById('swapBtn').style.display = 'none';
+            document.getElementById('connectBtn').innerHTML = 'Connect Wallet';
+            document.getElementById('connectBtn').onclick = () => showWalletSelector();
+            
+            document.getElementById('gtBalance').textContent = '0.00';
+            document.getElementById('gdogBalance').textContent = '0.00';
+            
+            showSuccess('Wallet disconnected');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSwapIndicator();
+            updatePoolData();
+            setInterval(updatePoolData, 30000);
+            
+            if (typeof window.ethereum !== 'undefined') {
+                window.ethereum.on('accountsChanged', function(accounts) {
+                    if (accounts.length === 0) {
+                        disconnectWallet();
+                    } else if (isConnected) {
+                        updateBalances();
+                    }
+                });
+
+                window.ethereum.on('chainChanged', function(chainId) {
+                    if (chainId !== GATECHAIN_CONFIG.chainId && isConnected) {
+                        showError('Please switch back to GateChain EVM network');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

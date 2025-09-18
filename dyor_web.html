@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DYOR合约调用工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .value {
+            color: #333;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .wallet-info {
+            background: #e8f4fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎯 DYOR合约调用工具</h1>
+        
+        <div class="info-card">
+            <div class="info-item">
+                <span class="label">合约地址:</span>
+                <span class="value">0xc4ce...7f44</span>
+            </div>
+            <div class="info-item">
+                <span class="label">方法ID:</span>
+                <span class="value">0x51b401a0</span>
+            </div>
+            <div class="info-item">
+                <span class="label">网络:</span>
+                <span class="value">OKC (Chain ID: 66)</span>
+            </div>
+        </div>
+
+        <div id="walletInfo" class="wallet-info hidden">
+            <div class="info-item">
+                <span class="label">钱包地址:</span>
+                <span class="wallet-address" id="walletAddress"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">OKB余额:</span>
+                <span class="value" id="okbBalance">0.0000</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">转入金额 (OKB):</label>
+            <input type="number" id="amount" class="input-field" value="1.0" step="0.1" min="0.1">
+        </div>
+
+        <button id="connectBtn" class="button" onclick="connectWallet()">
+            🔗 连接钱包
+        </button>
+
+        <button id="callBtn" class="button hidden" onclick="callContract()" disabled>
+            🚀 调用合约
+        </button>
+
+        <div id="status" class="status hidden"></div>
+    </div>
+
+    <script>
+        // 合约配置
+        const CONTRACT_ADDRESS = "0xc4cebdf3d4bbf14812dccb1ccb20ab26ea547f44";
+        const FUN_METHOD_ID = "0x51b401a0";
+        
+        // OKC网络配置
+        const OKC_CONFIG = {
+            chainId: '0x42', // 66 in decimal
+            chainName: 'OKC',
+            nativeCurrency: { 
+                name: 'OKB', 
+                symbol: 'OKB', 
+                decimals: 18 
+            },
+            rpcUrls: ['https://exchainrpc.okex.org'],
+            blockExplorerUrls: ['https://www.oklink.com/okc']
+        };
+
+        // 合约ABI
+        const CONTRACT_ABI = [
+            "function fun() payable",
+            "function balanceOf(address account) view returns (uint256)"
+        ];
+
+        let provider, signer, contract, isConnected = false;
+
+        // 连接钱包
+        async function connectWallet() {
+            try {
+                showStatus('正在连接钱包...', 'info');
+                
+                if (!window.ethereum) {
+                    throw new Error('请安装MetaMask或其他Web3钱包');
+                }
+
+                // 请求连接
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // 切换到OKC网络
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: OKC_CONFIG.chainId }]
+                    });
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [OKC_CONFIG]
+                        });
+                    }
+                }
+
+                // 创建provider和signer
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                
+                // 获取钱包信息
+                const address = await signer.getAddress();
+                const balance = await provider.getBalance(address);
+                const balanceInOKB = ethers.formatEther(balance);
+                
+                // 更新UI
+                document.getElementById('walletAddress').textContent = address;
+                document.getElementById('okbBalance').textContent = parseFloat(balanceInOKB).toFixed(4);
+                document.getElementById('walletInfo').classList.remove('hidden');
+                document.getElementById('connectBtn').classList.add('hidden');
+                document.getElementById('callBtn').classList.remove('hidden');
+                document.getElementById('callBtn').disabled = false;
+                
+                isConnected = true;
+                showStatus('钱包连接成功！', 'success');
+                
+            } catch (error) {
+                showStatus('连接失败: ' + error.message, 'error');
+            }
+        }
+
+        // 调用合约
+        async function callContract() {
+            if (!isConnected) {
+                showStatus('请先连接钱包', 'error');
+                return;
+            }
+
+            try {
+                const amount = document.getElementById('amount').value;
+                if (!amount || parseFloat(amount) <= 0) {
+                    showStatus('请输入有效的金额', 'error');
+                    return;
+                }
+
+                showStatus('正在调用合约...', 'info');
+                document.getElementById('callBtn').disabled = true;
+                document.getElementById('callBtn').innerHTML = '<span class="loading"></span>处理中...';
+
+                // 检查余额
+                const address = await signer.getAddress();
+                const balance = await provider.getBalance(address);
+                const balanceInOKB = parseFloat(ethers.formatEther(balance));
+                const amountFloat = parseFloat(amount);
+
+                if (balanceInOKB < amountFloat) {
+                    throw new Error(`余额不足，当前余额: ${balanceInOKB.toFixed(4)} OKB`);
+                }
+
+                // 估算gas
+                const amountWei = ethers.parseEther(amount);
+                const gasEstimate = await contract.fun.estimateGas({ value: amountWei });
+                
+                // 发送交易
+                const tx = await contract.fun({
+                    value: amountWei,
+                    gasLimit: gasEstimate * 120n / 100n // 增加20%的gas缓冲
+                });
+
+                showStatus(`交易已发送，哈希: ${tx.hash.substring(0,10)}...`, 'info');
+
+                // 等待确认
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    showStatus(`✅ 交易成功！区块: ${receipt.blockNumber}`, 'success');
+                    
+                    // 更新余额
+                    const newBalance = await provider.getBalance(address);
+                    const newBalanceInOKB = ethers.formatEther(newBalance);
+                    document.getElementById('okbBalance').textContent = parseFloat(newBalanceInOKB).toFixed(4);
+                } else {
+                    showStatus('❌ 交易失败', 'error');
+                }
+
+            } catch (error) {
+                showStatus('调用失败: ' + error.message, 'error');
+            } finally {
+                document.getElementById('callBtn').disabled = false;
+                document.getElementById('callBtn').innerHTML = '🚀 调用合约';
+            }
+        }
+
+        // 显示状态信息
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.classList.remove('hidden');
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        // 页面加载时检查是否已连接
+        window.addEventListener('load', async () => {
+            if (window.ethereum) {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        // 自动连接
+                        await connectWallet();
+                    }
+                } catch (error) {
+                    console.log('自动连接失败:', error);
+                }
+            }
+        });
+
+        // 监听账户变化
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    // 用户断开连接
+                    location.reload();
+                } else if (isConnected) {
+                    // 切换账户，重新连接
+                    location.reload();
+                }
+            });
+
+            window.ethereum.on('chainChanged', (chainId) => {
+                if (chainId !== OKC_CONFIG.chainId) {
+                    showStatus('请切换到OKC网络', 'error');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

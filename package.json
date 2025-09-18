@@ -1,0 +1,26 @@
+{
+  "name": "dyor-contract-caller",
+  "version": "1.0.0",
+  "description": "DYOR合约调用脚本 - 转入OKB",
+  "main": "dyor_contract_call.js",
+  "scripts": {
+    "start": "node dyor_contract_call.js",
+    "batch": "node dyor_contract_call.js batch 1.0 5",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "dyor",
+    "okb",
+    "ethereum",
+    "smart-contract",
+    "web3"
+  ],
+  "author": "GateDog314",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.7.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
